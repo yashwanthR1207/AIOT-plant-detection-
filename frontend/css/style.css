@@ -1,0 +1,27 @@
+body {
+    background-color: #f8f9fa;
+    scroll-behavior: smooth;
+}
+
+.card {
+    border: none;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.navbar {
+    z-index: 1000;
+}
+
+#camera-container video {
+    background-color: #000;
+    max-height: 400px;
+    object-fit: cover;
+}
+
+canvas {
+    max-height: 400px;
+}
