@@ -68,9 +68,19 @@ const sensorChart = new Chart(ctx, {
 });
 
 // Webcam Setup
+let currentFacingMode = 'user'; // 'user' for front, 'environment' for back
+
 async function setupWebcam() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        
+        const constraints = {
+            video: { facingMode: currentFacingMode }
+        };
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         video.onloadedmetadata = () => {
             detectionOverlay.width = video.videoWidth;
@@ -78,9 +88,20 @@ async function setupWebcam() {
         };
     } catch (err) {
         console.error("Webcam Error:", err);
+        // Fallback if specific facingMode fails
+        if (currentFacingMode === 'environment') {
+            currentFacingMode = 'user';
+            setupWebcam();
+        }
     }
 }
 setupWebcam();
+
+// Switch Camera Control
+document.getElementById('switchCameraBtn')?.addEventListener('click', () => {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    setupWebcam();
+});
 
 // MQTT Setup
 const client = mqtt.connect(`wss://${MQTT_CONFIG.host}:${MQTT_CONFIG.port}${MQTT_CONFIG.path}`, {
