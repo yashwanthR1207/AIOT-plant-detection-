@@ -1,27 +1,269 @@
+:root {
+    --primary: #10b981; /* Emerald 500 */
+    --primary-glow: rgba(16, 185, 129, 0.2);
+    --bg-dark: #020617; /* Deep Slate */
+    --card-dark: #0f172a; /* Slate 900 */
+    --border-dark: #1e293b; /* Slate 800 */
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --shadow-pro: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    background-color: #f8f9fa;
-    scroll-behavior: smooth;
+    background: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    min-height: 100vh;
+    transition: background 0.5s ease;
 }
 
-.card {
-    border: none;
-    transition: transform 0.2s;
+/* --- Dark Sidebar --- */
+.sidebar {
+    width: 260px;
+    background: var(--card-dark);
+    border-right: 1px solid var(--border-dark);
+    padding: 2rem 1.5rem;
+    position: fixed;
+    height: 100vh;
+    z-index: 100;
+    animation: slideInLeft 0.6s ease-out;
 }
 
-.card:hover {
-    transform: translateY(-5px);
+.sidebar-brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    letter-spacing: -0.5px;
 }
 
-.navbar {
-    z-index: 1000;
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
 }
 
-#camera-container video {
-    background-color: #000;
-    max-height: 400px;
+.nav-link:hover, .nav-link.active {
+    background: var(--primary-glow);
+    color: var(--primary);
+    transform: translateX(5px);
+}
+
+/* --- Main Content --- */
+.main-content {
+    flex: 1;
+    margin-left: 260px;
+    padding: 2.5rem 4rem;
+    animation: fadeIn 0.8s ease-out;
+}
+
+header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.status-badge {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--primary);
+    padding: 0.6rem 1.2rem;
+    border-radius: 50px;
+    border: 1px solid var(--primary-glow);
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    animation: pulseGlow 2s infinite;
+}
+
+/* --- Pro Dark Cards --- */
+.card-pro {
+    background: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    border-radius: 20px;
+    padding: 1.75rem;
+    box-shadow: var(--shadow-pro);
+    transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-pro:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+}
+
+.stat-label {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0.5rem 0;
+}
+
+/* --- AI Scanner Visuals --- */
+#camera-container {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+    border: 1px solid var(--border-dark);
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#webcam {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
 }
 
-canvas {
-    max-height: 400px;
+#detectionOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.d-none {
+    display: none !important;
+}
+
+.btn-pro {
+    background: var(--primary);
+    color: #000;
+    border: none;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.btn-pro:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px var(--primary-glow);
+}
+
+/* --- Visual Elements --- */
+.plant-hero-img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
+    opacity: 0.8;
+    transition: opacity 0.5s;
+    filter: contrast(1.1) brightness(0.9);
+}
+
+.plant-hero-img:hover {
+    opacity: 1;
+}
+
+.care-chip {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-dark);
+    padding: 1.25rem;
+    border-radius: 16px;
+    transition: 0.3s;
+}
+
+.care-chip:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--primary-glow);
+}
+
+/* --- Mobile Styling --- */
+.mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--card-dark);
+    border-top: 1px solid var(--border-dark);
+    padding: 1rem 0;
+    justify-content: space-around;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.mobile-nav-item {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    transition: 0.3s;
+}
+
+.mobile-nav-item.active {
+    color: var(--primary);
+}
+
+@media (max-width: 1024px) {
+    .sidebar { width: 80px; }
+    .sidebar-brand span, .nav-link span { display: none; }
+    .main-content { margin-left: 80px; }
+}
+
+@media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; padding: 1.5rem; padding-bottom: 6rem; }
+    .mobile-nav { display: flex; }
+    .stat-value { font-size: 2rem; }
 }

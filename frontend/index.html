@@ -3,114 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIoT Smart Plant System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Smart Plant Care | AI Dashboard</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
-        <div class="container">
-            <a class="navbar-brand" href="#">Smart Plant AIoT</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="#home">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#detection">Disease Detection</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#dashboard">Dashboard</a></li>
-                </ul>
-            </div>
+    <!-- Clean Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-leaf"></i>
+            <span>PlantCare Pro</span>
         </div>
+        <nav>
+            <ul class="nav-links" style="list-style: none;">
+                <li><a href="#dashboard" class="nav-link active"><i class="fas fa-th-large"></i> <span>Dashboard</span></a></li>
+                <li><a href="#detection" class="nav-link"><i class="fas fa-camera"></i> <span>AI Scanner</span></a></li>
+                <li><a href="#analytics" class="nav-link"><i class="fas fa-chart-bar"></i> <span>Analytics</span></a></li>
+                <li><a href="#settings" class="nav-link"><i class="fas fa-user-circle"></i> <span>Profile</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1>Plant Health Overview</h1>
+                <p style="color: var(--text-muted)">Welcome back, Yashwanth</p>
+            </div>
+            <div class="status-badge">
+                <i class="fas fa-check-circle"></i>
+                <span id="systemStatus">Device Connected</span>
+            </div>
+        </header>
+
+        <!-- Hero Image -->
+        <img src="https://images.unsplash.com/photo-1512428813833-df4a2e7b0e52?ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80" class="plant-hero-img" alt="Lush Plants">
+
+        <!-- Dashboard Stats -->
+        <section id="dashboard">
+            <div class="grid-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div class="card-pro">
+                    <div class="stat-label">Temperature</div>
+                    <div class="stat-value" id="liveTemp">--°C</div>
+                    <div style="color: var(--text-muted); font-size: 0.85rem;"><i class="fas fa-thermometer-half"></i> Ambient Air</div>
+                </div>
+                <div class="card-pro">
+                    <div class="stat-label">Humidity</div>
+                    <div class="stat-value" id="liveHumidity">--%</div>
+                    <div style="color: var(--text-muted); font-size: 0.85rem;"><i class="fas fa-tint"></i> Relative Humidity</div>
+                </div>
+                <div class="card-pro">
+                    <div class="stat-label">Soil Moisture</div>
+                    <div class="stat-value" id="liveSoil">--%</div>
+                    <div style="color: var(--text-muted); font-size: 0.85rem;"><i class="fas fa-seedling"></i> Substrate Water</div>
+                </div>
+            </div>
+
+            <div class="dashboard-secondary-grid" style="display: grid; grid-template-columns: 2.5fr 1fr; gap: 1.5rem; margin-bottom: 3rem;">
+                <div class="card-pro">
+                    <h3 style="margin-bottom: 1.5rem;">Live Growth Metrics</h3>
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="sensorChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-pro">
+                    <h3 style="margin-bottom: 1.5rem;">Activity Log</h3>
+                    <div id="activityLog" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Receiving data feed...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Scanner -->
+        <section id="detection" style="margin-top: 2rem">
+            <h2 style="margin-bottom: 1.5rem;">AI Disease Diagnosis</h2>
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem;">
+                <div class="card-pro">
+                    <div id="camera-container">
+                        <video id="webcam" autoplay playsinline></video>
+                        <canvas id="detectionOverlay" style="position: absolute; top: 0; left: 0;"></canvas>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                        <button id="captureBtn" class="btn-pro">
+                            <i class="fas fa-camera"></i> SCAN NOW
+                        </button>
+                        <button id="uploadTrigger" class="btn-pro" style="background: var(--card-dark); color: var(--text-main); border: 1px solid var(--border-dark);">
+                            <i class="fas fa-file-image"></i> UPLOAD
+                        </button>
+                        <input type="file" id="imageInput" hidden accept="image/*">
+                    </div>
+                </div>
+
+                <div class="card-pro">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--primary);">DIAGNOSIS REPORT</h3>
+                    <div id="loading" class="d-none" style="text-align: center; padding: 3rem 0;">
+                        <i class="fas fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                        <p>Processing Biometrics...</p>
+                    </div>
+                    
+                    <div id="resultCard" class="d-none">
+                        <div class="care-chip" style="margin-bottom: 1rem;">
+                            <div class="stat-label">Identification</div>
+                            <div id="diseaseName" style="font-size: 1.5rem; font-weight: 800; margin-top: 0.25rem;">-</div>
+                        </div>
+                        
+                        <div class="care-chip" style="margin-bottom: 1rem;">
+                            <div class="stat-label">AI Confidence</div>
+                            <div style="height: 10px; background: #eee; border-radius: 50px; margin: 0.75rem 0; overflow: hidden;">
+                                <div id="confidenceFill" style="height: 100%; width: 0%; background: var(--primary); transition: 1s ease-out;"></div>
+                            </div>
+                            <span id="confidenceScore" style="font-weight: 700;">0%</span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="care-chip">
+                                <div class="stat-label">Optimal Temp</div>
+                                <div id="optTemp" style="font-weight: 700;">-</div>
+                            </div>
+                            <div class="care-chip">
+                                <div class="stat-label">Optimal Humidity</div>
+                                <div id="optHumidity" style="font-weight: 700;">-</div>
+                            </div>
+                        </div>
+
+                        <div class="care-chip" style="margin-bottom: 1rem;">
+                            <div class="stat-label">Water Requirement</div>
+                            <div id="waterReq" style="font-weight: 700;">-</div>
+                        </div>
+
+                        <div class="care-chip">
+                            <div class="stat-label">Recommended Care</div>
+                            <p id="treatmentRecommendation" style="margin-top: 0.5rem; font-size: 0.9rem; line-height: 1.5; color: var(--text-dark);">-</p>
+                        </div>
+                    </div>
+
+                    <div id="placeholderText" style="text-align: center; padding: 4rem 0; color: var(--text-muted);">
+                        <i class="fas fa-hand-holding-seedling" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <p style="font-weight: 600;">Scan a leaf to begin</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Mobile Nav -->
+    <nav class="mobile-nav">
+        <a href="#dashboard" class="mobile-nav-item active"><i class="fas fa-th-large"></i> Home</a>
+        <a href="#detection" class="mobile-nav-item"><i class="fas fa-camera"></i> Scan</a>
+        <a href="#analytics" class="mobile-nav-item"><i class="fas fa-chart-bar"></i> Data</a>
+        <a href="#settings" class="mobile-nav-item"><i class="fas fa-user"></i> Profile</a>
     </nav>
 
-    <div class="container my-5">
-        <!-- Home Section -->
-        <section id="home" class="py-5 text-center">
-            <h1>Welcome to Smart Plant Care</h1>
-            <p class="lead">Monitor your plants in real-time and detect diseases using AI.</p>
-            <img src="https://images.unsplash.com/photo-1530836361253-efad5cb2f117?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="img-fluid rounded shadow" alt="Plant Image">
-        </section>
-
-        <hr>
-
-        <!-- Detection Section -->
-        <section id="detection" class="py-5">
-            <h2 class="mb-4">Plant Disease Detection</h2>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card p-3 shadow-sm">
-                        <h4>Upload or Capture Image</h4>
-                        <input type="file" id="imageInput" class="form-control mb-3" accept="image/*">
-                        <div id="camera-container" class="mb-3">
-                            <video id="webcam" autoplay playsinline class="w-100 rounded border"></video>
-                        </div>
-                        <button id="captureBtn" class="btn btn-primary mb-2">Capture & Analyze</button>
-                        <button id="uploadBtn" class="btn btn-success">Analyze Uploaded Image</button>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div id="resultCard" class="card p-3 shadow-sm d-none">
-                        <h4>Analysis Result</h4>
-                        <p><strong>Disease:</strong> <span id="diseaseName">-</span></p>
-                        <p><strong>Confidence:</strong> <span id="confidenceScore">-</span></p>
-                        <p><strong>Treatment:</strong></p>
-                        <p id="treatmentRecommendation" class="text-muted">-</p>
-                    </div>
-                    <div id="loading" class="text-center d-none">
-                        <div class="spinner-border text-success" role="status"></div>
-                        <p>Analyzing with Gemini AI...</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <hr>
-
-        <!-- Dashboard Section -->
-        <section id="dashboard" class="py-5">
-            <h2 class="mb-4">Live Monitoring Dashboard</h2>
-            <div class="row text-center mb-4">
-                <div class="col-md-4">
-                    <div class="card bg-info text-white p-3 shadow">
-                        <h5>Temperature</h5>
-                        <h2 id="liveTemp">-- °C</h2>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card bg-primary text-white p-3 shadow">
-                        <h5>Humidity</h5>
-                        <h2 id="liveHumidity">-- %</h2>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card bg-warning text-dark p-3 shadow">
-                        <h5>Soil Moisture</h5>
-                        <h2 id="liveSoil">-- %</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-8">
-                    <canvas id="sensorChart"></canvas>
-                </div>
-                <div class="col-md-4">
-                    <h4>Recent Activity</h4>
-                    <ul id="activityLog" class="list-group">
-                        <li class="list-group-item">Waiting for data...</li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <footer class="bg-dark text-white text-center py-3">
-        <p>&copy; 2026 Smart Plant AIoT System</p>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
