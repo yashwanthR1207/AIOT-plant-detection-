@@ -5,6 +5,7 @@ const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const cors = require('cors');
 const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -13,32 +14,52 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-const upload = multer({ dest: 'uploads/' });
+
+// Serve Static Frontend Files
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// Use /tmp for Vercel read-only filesystem compatibility
+const upload = multer({ dest: '/tmp/' });
 
 // Supabase Setup
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('your_')) {
+    console.warn('⚠️  WARNING: Supabase credentials missing. Database logging will be disabled.');
+}
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Gemini AI Setup
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const geminiKey = process.env.GEMINI_API_KEY;
+if (!geminiKey || geminiKey.includes('your_')) {
+    console.warn('⚠️  WARNING: GEMINI_API_KEY missing. Disease detection will not work.');
+}
+const genAI = geminiKey ? new GoogleGenerativeAI(geminiKey) : null;
 
 // MQTT Setup
 const mqttOptions = {
     host: process.env.MQTT_HOST,
-    port: process.env.MQTT_PORT,
+    port: parseInt(process.env.MQTT_PORT) || 8883,
     protocol: 'mqtts',
     username: process.env.MQTT_USER,
     password: process.env.MQTT_PASSWORD,
 };
-const mqttClient = mqtt.connect(mqttOptions);
 
-mqttClient.on('connect', () => {
-    console.log('Connected to HiveMQ Cloud');
-    mqttClient.subscribe(['plant/temperature', 'plant/humidity', 'plant/soil'], (err) => {
-        if (err) console.error('MQTT Subscribe Error:', err);
+let mqttClient = null;
+if (mqttOptions.host && !mqttOptions.host.includes('your_')) {
+    mqttClient = mqtt.connect(mqttOptions);
+    mqttClient.on('connect', () => {
+        console.log('✅ Connected to HiveMQ Cloud');
+        mqttClient.subscribe(['plant/temperature', 'plant/humidity', 'plant/soil'], (err) => {
+            if (err) console.error('MQTT Subscribe Error:', err);
+        });
     });
-});
+} else {
+    console.warn('⚠️  WARNING: MQTT credentials missing. Real-time sensor data will be disabled.');
+}
 
-mqttClient.on('message', async (topic, message) => {
+mqttClient?.on('message', async (topic, message) => {
     const value = parseFloat(message.toString());
     console.log(`Received message: ${topic} -> ${value}`);
 
@@ -47,7 +68,7 @@ mqttClient.on('message', async (topic, message) => {
     if (topic === 'plant/humidity') update.humidity = value;
     if (topic === 'plant/soil') update.soil_moisture = value;
 
-    if (Object.keys(update).length > 0) {
+    if (Object.keys(update).length > 0 && supabase) {
         const { error } = await supabase.from('sensor_data').insert([update]);
         if (error) console.error('Supabase Insert Error:', error);
     }
@@ -67,6 +88,7 @@ function fileToGenerativePart(path, mimeType) {
 app.post('/detect-disease', upload.single('image'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+        if (!genAI) return res.status(503).json({ error: 'Gemini AI not configured' });
 
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const prompt = "Analyze this plant leaf image. Return JSON format with fields: disease_name, confidence_score (0-1), and treatment_recommendation. If no disease is found, state 'Healthy'.";
@@ -83,22 +105,24 @@ app.post('/detect-disease', upload.single('image'), async (req, res) => {
         // Auto Spray Logic
         if (analysis.confidence_score > 0.8 && analysis.disease_name !== 'Healthy') {
             console.log('Confidence high, triggering sprayer...');
-            mqttClient.publish('plant/spray', 'ON');
-            await supabase.from('spray_logs').insert([{ action: 'ON' }]);
+            mqttClient?.publish('plant/spray', 'ON');
+            if (supabase) await supabase.from('spray_logs').insert([{ action: 'ON' }]);
             
             setTimeout(async () => {
-                mqttClient.publish('plant/spray', 'OFF');
-                await supabase.from('spray_logs').insert([{ action: 'OFF' }]);
+                mqttClient?.publish('plant/spray', 'OFF');
+                if (supabase) await supabase.from('spray_logs').insert([{ action: 'OFF' }]);
             }, 5000);
         }
 
         // Save to Supabase
-        await supabase.from('disease_logs').insert([{
-            disease_name: analysis.disease_name,
-            confidence: analysis.confidence_score,
-            treatment: analysis.treatment_recommendation,
-            image_url: req.file.filename // In production, upload to Supabase Storage
-        }]);
+        if (supabase) {
+            await supabase.from('disease_logs').insert([{
+                disease_name: analysis.disease_name,
+                confidence: analysis.confidence_score,
+                treatment: analysis.treatment_recommendation,
+                image_url: req.file.filename
+            }]);
+        }
 
         // Cleanup local file
         fs.unlinkSync(req.file.path);
@@ -110,6 +134,17 @@ app.post('/detect-disease', upload.single('image'), async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Backend running at http://localhost:${port}`);
+// Catch-all route to serve the frontend index.html
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => {
+        console.log(`Backend running at http://localhost:${port}`);
+    });
+}
+
+// Export for Vercel
+module.exports = app;

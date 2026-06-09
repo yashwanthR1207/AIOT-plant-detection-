@@ -1,0 +1,14 @@
+{
+  "name": "smart-plant-system",
+  "version": "1.0.0",
+  "description": "AIoT Smart Plant Disease Detection and Automatic Spraying System",
+  "scripts": {
+    "install-all": "npm install --prefix backend",
+    "dev": "npm run dev --prefix backend",
+    "start": "npm start --prefix backend",
+    "build": "echo 'No build step required for static frontend'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,39 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Backend specific
+smart-plant-system/backend/uploads/*
+!smart-plant-system/backend/uploads/.gitkeep
+
+# Arduino / ESP32
+build/
+bin/
+*.elf
+*.bin
+*.hex
+.arduinoIDE/
+.vscode/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs
+logs
+*.log
+
+# Dependency directories
+jspm_packages/
+# ... add other dependency directories as needed
