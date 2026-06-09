@@ -174,7 +174,6 @@ async function runYOLOInference(event) {
     placeholderText.classList.add('d-none');
     
     const ctx = detectionOverlay.getContext('2d');
-    ctx.clearRect(0, 0, detectionOverlay.width, detectionOverlay.height);
     
     // Handle Image Upload display
     if (event && event.target && event.target.files && event.target.files[0]) {
@@ -185,22 +184,35 @@ async function runYOLOInference(event) {
                 // Resize canvas to match image
                 detectionOverlay.width = img.width;
                 detectionOverlay.height = img.height;
+                ctx.clearRect(0, 0, detectionOverlay.width, detectionOverlay.height);
                 ctx.drawImage(img, 0, 0);
-                performInference(ctx, detectionOverlay.width, detectionOverlay.height);
+                performInference(ctx, detectionOverlay.width, detectionOverlay.height, true);
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(event.target.files[0]);
     } else {
-        // Use Webcam
+        // Use Webcam - Capture frame for persistence
         detectionOverlay.width = video.videoWidth || 640;
         detectionOverlay.height = video.videoHeight || 480;
-        performInference(ctx, detectionOverlay.width, detectionOverlay.height);
+        ctx.clearRect(0, 0, detectionOverlay.width, detectionOverlay.height);
+        ctx.drawImage(video, 0, 0, detectionOverlay.width, detectionOverlay.height);
+        performInference(ctx, detectionOverlay.width, detectionOverlay.height, false);
     }
 }
 
-async function performInference(ctx, width, height) {
+async function performInference(ctx, width, height, isUpload) {
     await new Promise(r => setTimeout(r, 1500));
+
+    // Simulate Human vs Plant detection (randomly simulate "Invalid" for demo purposes)
+    // In a real YOLO model, this would be based on class probabilities
+    const isHumanDetected = Math.random() < 0.2; // 20% chance to simulate an invalid scan
+
+    if (isHumanDetected) {
+        showInvalidScan(ctx, width, height);
+        loading.classList.add('d-none');
+        return;
+    }
 
     const result = DISEASES[Math.floor(Math.random() * DISEASES.length)];
     
@@ -224,6 +236,33 @@ async function performInference(ctx, width, height) {
 
     displayResult(result);
     loading.classList.add('d-none');
+}
+
+function showInvalidScan(ctx, width, height) {
+    resultCard.classList.add('d-none');
+    
+    // Darken overlay
+    ctx.fillStyle = "rgba(239, 68, 68, 0.3)"; // Redish tint
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = "#ef4444";
+    ctx.lineWidth = 5;
+    ctx.strokeRect(50, 50, width - 100, height - 100);
+
+    ctx.fillStyle = "#ef4444";
+    ctx.font = "bold 24px Inter";
+    ctx.textAlign = "center";
+    ctx.fillText("INVALID OBJECT DETECTED", width / 2, height / 2);
+    ctx.font = "16px Inter";
+    ctx.fillText("Please scan a plant leaf", width / 2, height / 2 + 40);
+    
+    // Update Result UI
+    placeholderText.innerHTML = `
+        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+        <p style="font-weight: 600; color: #ef4444;">Invalid Scan</p>
+        <p style="font-size: 0.85rem;">Human or non-plant detected. Please try again.</p>
+    `;
+    placeholderText.classList.remove('d-none');
 }
 
 function displayResult(data) {
