@@ -173,6 +173,51 @@ header h1 {
     display: none !important;
 }
 
+/* --- Auth Overlay --- */
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-dark);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 450px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.pro-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-dark);
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    color: #fff;
+    margin-top: 0.5rem;
+    font-family: inherit;
+    transition: 0.3s;
+}
+
+.pro-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+select.pro-input {
+    appearance: none;
+    cursor: pointer;
+}
+
 .btn-pro {
     background: var(--primary);
     color: #000;

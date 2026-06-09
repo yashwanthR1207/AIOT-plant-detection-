@@ -222,12 +222,58 @@ captureBtn.addEventListener('click', runYOLOInference);
 uploadTrigger.addEventListener('click', () => imageInput.click());
 imageInput.addEventListener('change', runYOLOInference);
 
+// Auth & Profile Logic
+function checkAuth() {
+    const user = JSON.parse(localStorage.getItem('plantCareUser'));
+    if (user) {
+        document.getElementById('authOverlay').style.display = 'none';
+        updateProfileUI(user);
+    } else {
+        document.getElementById('authOverlay').style.display = 'flex';
+    }
+}
+
+function updateProfileUI(user) {
+    document.getElementById('profileNameDisplay').innerText = user.name;
+    document.getElementById('profilePhoneDisplay').innerText = user.phone;
+    document.getElementById('profileTypeDisplay').innerText = user.type;
+    
+    // Update welcome message
+    document.querySelector('header p').innerText = `Welcome back, ${user.name.split(' ')[0]}`;
+}
+
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const userData = {
+        name: document.getElementById('userNameInput').value,
+        phone: document.getElementById('userPhoneInput').value,
+        type: document.getElementById('userTypeInput').value
+    };
+    localStorage.setItem('plantCareUser', JSON.stringify(userData));
+    checkAuth();
+});
+
+function logout() {
+    localStorage.removeItem('plantCareUser');
+    window.location.reload();
+}
+
+// Initialize Auth
+checkAuth();
+
 // Nav Logic
 function updateActiveLink(hash) {
     document.querySelectorAll('.nav-link, .mobile-nav-item').forEach(link => {
         link.classList.remove('active');
         if (link.getAttribute('href') === hash) link.classList.add('active');
     });
+
+    // Handle section visibility
+    document.querySelectorAll('main > section').forEach(section => {
+        section.style.display = 'none';
+    });
+    const target = document.querySelector(hash);
+    if (target) target.style.display = 'block';
 }
 
 document.querySelectorAll('.nav-link, .mobile-nav-item').forEach(link => {
@@ -235,11 +281,12 @@ document.querySelectorAll('.nav-link, .mobile-nav-item').forEach(link => {
         const hash = link.getAttribute('href');
         if (hash.startsWith('#')) {
             e.preventDefault();
-            const target = document.querySelector(hash);
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth' });
-                updateActiveLink(hash);
-            }
+            updateActiveLink(hash);
+            window.location.hash = hash;
         }
     });
 });
+
+// Set default view
+if (!window.location.hash) window.location.hash = '#dashboard';
+updateActiveLink(window.location.hash);
