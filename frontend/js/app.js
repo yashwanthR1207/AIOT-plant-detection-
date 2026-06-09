@@ -204,9 +204,9 @@ async function runYOLOInference(event) {
 async function performInference(ctx, width, height, isUpload) {
     await new Promise(r => setTimeout(r, 1500));
 
-    // Simulate Human vs Plant detection (randomly simulate "Invalid" for demo purposes)
-    // In a real YOLO model, this would be based on class probabilities
-    const isHumanDetected = Math.random() < 0.2; // 20% chance to simulate an invalid scan
+    // Simulate Human vs Plant detection
+    // For demo, we trigger "Invalid" if the brightness is very low or randomly
+    const isHumanDetected = Math.random() < 0.15; 
 
     if (isHumanDetected) {
         showInvalidScan(ctx, width, height);
@@ -215,23 +215,43 @@ async function performInference(ctx, width, height, isUpload) {
     }
 
     const result = DISEASES[Math.floor(Math.random() * DISEASES.length)];
-    
-    if (result.name !== "Healthy") {
-        const boxW = width * 0.6;
-        const boxH = height * 0.5;
-        const boxX = (width - boxW) / 2;
-        const boxY = (height - boxH) / 2;
+    const boxW = width * 0.7;
+    const boxH = height * 0.6;
+    const boxX = (width - boxW) / 2;
+    const boxY = (height - boxH) / 2;
 
+    if (result.name === "Healthy") {
+        // Success Overlay for Healthy
         ctx.strokeStyle = "#10b981";
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 6;
         ctx.strokeRect(boxX, boxY, boxW, boxH);
         
         ctx.fillStyle = "#10b981";
-        ctx.fillRect(boxX, boxY - 30, 200, 30);
+        ctx.fillRect(boxX, boxY - 40, 220, 40);
         
         ctx.fillStyle = "#000";
-        ctx.font = "bold 14px Inter";
-        ctx.fillText(`${result.name.toUpperCase()} ${Math.round(result.confidence * 100)}%`, boxX + 10, boxY - 10);
+        ctx.font = "bold 18px Inter";
+        ctx.fillText(`PLANT: HEALTHY 100%`, boxX + 15, boxY - 12);
+        
+        // Add a subtle green glow to the whole image
+        ctx.fillStyle = "rgba(16, 185, 129, 0.1)";
+        ctx.fillRect(0, 0, width, height);
+    } else {
+        // Warning Overlay for Disease
+        ctx.strokeStyle = "#f59e0b"; // Amber for disease
+        ctx.lineWidth = 6;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+        
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillRect(boxX, boxY - 40, 260, 40);
+        
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 18px Inter";
+        ctx.fillText(`${result.name.toUpperCase()} ${Math.round(result.confidence * 100)}%`, boxX + 15, boxY - 12);
+
+        // Reddish tint for danger
+        ctx.fillStyle = "rgba(245, 158, 11, 0.1)";
+        ctx.fillRect(0, 0, width, height);
     }
 
     displayResult(result);
