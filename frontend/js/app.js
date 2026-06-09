@@ -261,46 +261,55 @@ async function performInference(ctx, width, height, isUpload) {
 function showInvalidScan(ctx, width, height) {
     resultCard.classList.add('d-none');
     
-    // Darken overlay
-    ctx.fillStyle = "rgba(239, 68, 68, 0.3)"; // Redish tint
+    // Clear and Red Overlay
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(video, 0, 0, width, height); // Re-draw current frame
+    ctx.fillStyle = "rgba(239, 68, 68, 0.4)"; 
     ctx.fillRect(0, 0, width, height);
 
     ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 5;
-    ctx.strokeRect(50, 50, width - 100, height - 100);
+    ctx.lineWidth = 8;
+    ctx.strokeRect(40, 40, width - 80, height - 80);
 
-    ctx.fillStyle = "#ef4444";
-    ctx.font = "bold 24px Inter";
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 28px Inter";
     ctx.textAlign = "center";
-    ctx.fillText("INVALID OBJECT DETECTED", width / 2, height / 2);
-    ctx.font = "16px Inter";
-    ctx.fillText("Please scan a plant leaf", width / 2, height / 2 + 40);
+    ctx.fillText("INVALID OBJECT", width / 2, height / 2);
+    ctx.font = "18px Inter";
+    ctx.fillText("Please scan a plant leaf", width / 2, height / 2 + 45);
     
-    // Update Result UI
+    // Update Result UI with Reset option
     placeholderText.innerHTML = `
-        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
-        <p style="font-weight: 600; color: #ef4444;">Invalid Scan</p>
-        <p style="font-size: 0.85rem;">Human or non-plant detected. Please try again.</p>
+        <i class="fas fa-user-slash" style="font-size: 3.5rem; color: #ef4444; margin-bottom: 1.5rem;"></i>
+        <h3 style="color: #ef4444; margin-bottom: 0.5rem;">HUMAN DETECTED</h3>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">The AI has identified a non-plant object. For safety and accuracy, please only scan botanical specimens.</p>
+        <button onclick="resetScan()" class="btn-pro" style="background: #ef4444; color: #fff;">
+            <i class="fas fa-sync"></i> RETRY SCAN
+        </button>
     `;
     placeholderText.classList.remove('d-none');
 }
 
-function displayResult(data) {
-    resultCard.classList.remove('d-none');
-    document.getElementById('diseaseName').innerText = data.name;
-    const score = Math.round(data.confidence * 100);
-    document.getElementById('confidenceScore').innerText = `${score}%`;
-    document.getElementById('confidenceFill').style.width = `${score}%`;
-    document.getElementById('treatmentRecommendation').innerText = data.treatment;
-    document.getElementById('optTemp').innerText = data.optTemp;
-    document.getElementById('optHumidity').innerText = data.optHumidity;
-    document.getElementById('waterReq').innerText = data.water;
+function resetScan() {
+    const ctx = detectionOverlay.getContext('2d');
+    ctx.clearRect(0, 0, detectionOverlay.width, detectionOverlay.height);
+    
+    resultCard.classList.add('d-none');
+    placeholderText.classList.remove('d-none');
+    placeholderText.innerHTML = `
+        <i class="fas fa-hand-holding-seedling" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+        <p style="font-weight: 600;">Scan a leaf to begin</p>
+    `;
+    
+    // Ensure webcam is showing
+    video.style.display = 'block';
 }
 
 // Controls
 captureBtn.addEventListener('click', runYOLOInference);
 uploadTrigger.addEventListener('click', () => imageInput.click());
 imageInput.addEventListener('change', runYOLOInference);
+document.getElementById('resetScanBtn')?.addEventListener('click', resetScan);
 
 // Auth & Profile Logic
 function checkAuth() {
