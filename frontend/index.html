@@ -63,7 +63,7 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <header style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <header class="page-header">
             <div>
                 <h1>Plant Health Overview</h1>
                 <p style="color: var(--text-muted)">Welcome back, Yashwanth</p>
@@ -76,7 +76,7 @@
 
         <!-- Dashboard Stats -->
         <section id="dashboard">
-            <div class="grid-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="grid-stats">
                 <div class="card-pro">
                     <div class="stat-label">Temperature</div>
                     <div class="stat-value" id="liveTemp">--°C</div>
@@ -94,7 +94,7 @@
                 </div>
             </div>
 
-            <div class="dashboard-secondary-grid" style="display: grid; grid-template-columns: 2.5fr 1fr; gap: 1.5rem; margin-bottom: 3rem;">
+            <div class="dashboard-secondary-grid">
                 <div class="card-pro">
                     <h3 style="margin-bottom: 1.5rem;">Live Growth Metrics</h3>
                     <div class="chart-container" style="height: 300px;">
@@ -111,9 +111,9 @@
         </section>
 
         <!-- AI Scanner -->
-        <section id="detection" style="margin-top: 2rem">
+        <section id="detection" class="scanner-section">
             <h2 style="margin-bottom: 1.5rem;">AI Disease Diagnosis</h2>
-            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem;">
+            <div class="scanner-grid">
                 <div class="card-pro">
                     <div id="camera-container">
                         <video id="webcam" autoplay playsinline></video>
@@ -122,7 +122,7 @@
                             <i class="fas fa-sync"></i>
                         </button>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                    <div class="scan-actions">
                         <button id="captureBtn" class="btn-pro">
                             <i class="fas fa-camera"></i> SCAN NOW
                         </button>
@@ -179,7 +179,6 @@
                             <i class="fas fa-redo"></i> START NEW SCAN
                         </button>
                     </div>
-                    </div>
 
                     <div id="placeholderText" style="text-align: center; padding: 4rem 0; color: var(--text-muted);">
                         <i class="fas fa-hand-holding-seedling" style="font-size: 3rem; margin-bottom: 1rem;"></i>
@@ -228,6 +227,8 @@
         <a href="#settings" class="mobile-nav-item"><i class="fas fa-user"></i> Profile</a>
     </nav>
 
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

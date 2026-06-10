@@ -168,6 +168,28 @@ const DISEASES = [
     { name: "Healthy", confidence: 0.99, treatment: "Plant is thriving. Maintain current light and water schedule.", optTemp: "21-26°C", optHumidity: "60%", water: "500ml / Standard" }
 ];
 
+let humanDetectorPromise = null;
+
+function getHumanDetector() {
+    if (!window.cocoSsd) {
+        return Promise.resolve(null);
+    }
+
+    if (!humanDetectorPromise) {
+        humanDetectorPromise = cocoSsd.load();
+    }
+
+    return humanDetectorPromise;
+}
+
+async function detectHuman(source) {
+    const detector = await getHumanDetector();
+    if (!detector || !source) return null;
+
+    const predictions = await detector.detect(source);
+    return predictions.find(prediction => prediction.class === 'person' && prediction.score >= 0.55) || null;
+}
+
 async function runYOLOInference(event) {
     loading.classList.remove('d-none');
     resultCard.classList.add('d-none');
@@ -186,7 +208,7 @@ async function runYOLOInference(event) {
                 detectionOverlay.height = img.height;
                 ctx.clearRect(0, 0, detectionOverlay.width, detectionOverlay.height);
                 ctx.drawImage(img, 0, 0);
-                performInference(ctx, detectionOverlay.width, detectionOverlay.height, true);
+                performInference(ctx, detectionOverlay.width, detectionOverlay.height, img);
             };
             img.src = e.target.result;
         };
@@ -197,92 +219,128 @@ async function runYOLOInference(event) {
         detectionOverlay.height = video.videoHeight || 480;
         ctx.clearRect(0, 0, detectionOverlay.width, detectionOverlay.height);
         ctx.drawImage(video, 0, 0, detectionOverlay.width, detectionOverlay.height);
-        performInference(ctx, detectionOverlay.width, detectionOverlay.height, false);
+        performInference(ctx, detectionOverlay.width, detectionOverlay.height, video);
     }
 }
 
-async function performInference(ctx, width, height, isUpload) {
-    await new Promise(r => setTimeout(r, 1500));
+async function performInference(ctx, width, height, source) {
+    try {
+        await new Promise(r => setTimeout(r, 400));
 
-    // Simulate Human vs Plant detection
-    // For demo, we trigger "Invalid" if the brightness is very low or randomly
-    const isHumanDetected = Math.random() < 0.15; 
+        const humanDetection = await detectHuman(source);
 
-    if (isHumanDetected) {
-        showInvalidScan(ctx, width, height);
+        if (humanDetection) {
+            showInvalidScan(ctx, width, height, humanDetection);
+            return;
+        }
+
+        const result = DISEASES[Math.floor(Math.random() * DISEASES.length)];
+        const boxW = width * 0.7;
+        const boxH = height * 0.6;
+        const boxX = (width - boxW) / 2;
+        const boxY = (height - boxH) / 2;
+
+        if (result.name === "Healthy") {
+            // Success Overlay for Healthy
+            ctx.strokeStyle = "#10b981";
+            ctx.lineWidth = 6;
+            ctx.strokeRect(boxX, boxY, boxW, boxH);
+            
+            ctx.fillStyle = "#10b981";
+            ctx.fillRect(boxX, boxY - 40, 220, 40);
+            
+            ctx.fillStyle = "#000";
+            ctx.font = "bold 18px Inter";
+            ctx.fillText(`PLANT: HEALTHY 100%`, boxX + 15, boxY - 12);
+            
+            // Add a subtle green glow to the whole image
+            ctx.fillStyle = "rgba(16, 185, 129, 0.1)";
+            ctx.fillRect(0, 0, width, height);
+        } else {
+            // Warning Overlay for Disease
+            ctx.strokeStyle = "#f59e0b"; // Amber for disease
+            ctx.lineWidth = 6;
+            ctx.strokeRect(boxX, boxY, boxW, boxH);
+            
+            ctx.fillStyle = "#f59e0b";
+            ctx.fillRect(boxX, boxY - 40, 260, 40);
+            
+            ctx.fillStyle = "#000";
+            ctx.font = "bold 18px Inter";
+            ctx.fillText(`${result.name.toUpperCase()} ${Math.round(result.confidence * 100)}%`, boxX + 15, boxY - 12);
+
+            // Reddish tint for danger
+            ctx.fillStyle = "rgba(245, 158, 11, 0.1)";
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        displayResult(result);
+    } catch (error) {
+        console.error('Inference failed:', error);
+        placeholderText.innerHTML = `
+            <i class="fas fa-triangle-exclamation" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+            <p style="font-weight: 700; color: #ef4444;">Diagnosis failed</p>
+            <p style="margin-top: 0.5rem;">Please try scanning the leaf again.</p>
+        `;
+        placeholderText.classList.remove('d-none');
+        resultCard.classList.add('d-none');
+    } finally {
         loading.classList.add('d-none');
-        return;
     }
-
-    const result = DISEASES[Math.floor(Math.random() * DISEASES.length)];
-    const boxW = width * 0.7;
-    const boxH = height * 0.6;
-    const boxX = (width - boxW) / 2;
-    const boxY = (height - boxH) / 2;
-
-    if (result.name === "Healthy") {
-        // Success Overlay for Healthy
-        ctx.strokeStyle = "#10b981";
-        ctx.lineWidth = 6;
-        ctx.strokeRect(boxX, boxY, boxW, boxH);
-        
-        ctx.fillStyle = "#10b981";
-        ctx.fillRect(boxX, boxY - 40, 220, 40);
-        
-        ctx.fillStyle = "#000";
-        ctx.font = "bold 18px Inter";
-        ctx.fillText(`PLANT: HEALTHY 100%`, boxX + 15, boxY - 12);
-        
-        // Add a subtle green glow to the whole image
-        ctx.fillStyle = "rgba(16, 185, 129, 0.1)";
-        ctx.fillRect(0, 0, width, height);
-    } else {
-        // Warning Overlay for Disease
-        ctx.strokeStyle = "#f59e0b"; // Amber for disease
-        ctx.lineWidth = 6;
-        ctx.strokeRect(boxX, boxY, boxW, boxH);
-        
-        ctx.fillStyle = "#f59e0b";
-        ctx.fillRect(boxX, boxY - 40, 260, 40);
-        
-        ctx.fillStyle = "#000";
-        ctx.font = "bold 18px Inter";
-        ctx.fillText(`${result.name.toUpperCase()} ${Math.round(result.confidence * 100)}%`, boxX + 15, boxY - 12);
-
-        // Reddish tint for danger
-        ctx.fillStyle = "rgba(245, 158, 11, 0.1)";
-        ctx.fillRect(0, 0, width, height);
-    }
-
-    displayResult(result);
-    loading.classList.add('d-none');
 }
 
-function showInvalidScan(ctx, width, height) {
+function displayResult(result) {
+    const confidencePercent = Math.round(result.confidence * 100);
+    const isHealthy = result.name === "Healthy";
+
+    document.getElementById('diseaseName').innerText = result.name;
+    document.getElementById('confidenceScore').innerText = `${confidencePercent}%`;
+    document.getElementById('confidenceFill').style.width = `${confidencePercent}%`;
+    document.getElementById('confidenceFill').style.background = isHealthy ? '#10b981' : '#f59e0b';
+    document.getElementById('optTemp').innerText = result.optTemp;
+    document.getElementById('optHumidity').innerText = result.optHumidity;
+    document.getElementById('waterReq').innerText = result.water;
+    document.getElementById('treatmentRecommendation').innerText = result.treatment;
+
+    placeholderText.classList.add('d-none');
+    resultCard.classList.remove('d-none');
+
+    addActivityLog(`DIAGNOSIS: ${result.name} (${confidencePercent}%)`);
+
+    if (!isHealthy && result.confidence >= 0.8 && client.connected) {
+        client.publish('plant/sprayer', 'ON');
+        addActivityLog('SPRAYER: Auto trigger sent');
+    }
+}
+
+function showInvalidScan(ctx, width, height, humanDetection) {
     resultCard.classList.add('d-none');
     
-    // Clear and Red Overlay
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(video, 0, 0, width, height); // Re-draw current frame
     ctx.fillStyle = "rgba(239, 68, 68, 0.4)"; 
     ctx.fillRect(0, 0, width, height);
 
     ctx.strokeStyle = "#ef4444";
     ctx.lineWidth = 8;
-    ctx.strokeRect(40, 40, width - 80, height - 80);
+    if (humanDetection?.bbox) {
+        const [boxX, boxY, boxW, boxH] = humanDetection.bbox;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+    } else {
+        ctx.strokeRect(40, 40, width - 80, height - 80);
+    }
 
     ctx.fillStyle = "#fff";
     ctx.font = "bold 28px Inter";
     ctx.textAlign = "center";
-    ctx.fillText("INVALID OBJECT", width / 2, height / 2);
+    ctx.fillText("INVALID SCAN", width / 2, height / 2);
     ctx.font = "18px Inter";
-    ctx.fillText("Please scan a plant leaf", width / 2, height / 2 + 45);
+    ctx.fillText("Please scan a plant leaf only", width / 2, height / 2 + 45);
     
     // Update Result UI with Reset option
     placeholderText.innerHTML = `
         <i class="fas fa-user-slash" style="font-size: 3.5rem; color: #ef4444; margin-bottom: 1.5rem;"></i>
-        <h3 style="color: #ef4444; margin-bottom: 0.5rem;">HUMAN DETECTED</h3>
-        <p style="color: var(--text-muted); margin-bottom: 2rem;">The AI has identified a non-plant object. For safety and accuracy, please only scan botanical specimens.</p>
+        <h3 style="color: #ef4444; margin-bottom: 0.5rem;">INVALID SCAN</h3>
+        <p style="color: var(--text-muted); margin-bottom: 0.75rem; font-weight: 700;">Human or non-plant object detected.</p>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Please scan a plant leaf to generate a diagnosis report.</p>
         <button onclick="resetScan()" class="btn-pro" style="background: #ef4444; color: #fff;">
             <i class="fas fa-sync"></i> RETRY SCAN
         </button>
