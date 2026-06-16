@@ -1,10 +1,10 @@
 // Configurations
 const MQTT_CONFIG = {
-    host: 'ed27ef14c693417e8e804913cc462527.s1.eu.hivemq.cloud',
+    host: '4e281989a47c432e97db4d888a2541fd.s1.eu.hivemq.cloud',
     port: 8884,
     path: '/mqtt',
-    username: 'yashwanthR',
-    password: 'Yashwanth1207!!'
+    username: 'yashwanth',
+    password: 'Yashwanth@1207'
 };
 
 // UI Elements
