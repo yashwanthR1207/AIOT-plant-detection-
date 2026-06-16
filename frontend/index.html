@@ -39,6 +39,16 @@
             <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Please setup your profile to continue</p>
             
             <form id="loginForm">
+                <div class="profile-photo-field">
+                    <div class="profile-photo-preview" id="profilePhotoPreview">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <label for="profilePhotoInput" class="photo-upload-btn">
+                        <i class="fas fa-camera"></i>
+                        Add Profile Photo
+                    </label>
+                    <input type="file" id="profilePhotoInput" hidden accept="image/*">
+                </div>
                 <div class="form-group">
                     <label class="stat-label">Full Name</label>
                     <input type="text" id="userNameInput" required class="pro-input" placeholder="Enter your name">
@@ -193,7 +203,7 @@
             <h2 style="margin-bottom: 2.5rem;">User Profile</h2>
             <div class="card-pro" style="max-width: 600px;">
                 <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border-dark);">
-                    <div style="width: 100px; height: 100px; background: var(--primary-glow); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: var(--primary);">
+                    <div id="profilePhotoDisplay" class="profile-avatar">
                         <i class="fas fa-user-circle"></i>
                     </div>
                     <div>

@@ -3,8 +3,8 @@ const MQTT_CONFIG = {
     host: 'ed27ef14c693417e8e804913cc462527.s1.eu.hivemq.cloud',
     port: 8884,
     path: '/mqtt',
-    username: 'yashwanth',
-    password: 'Yashwanth'
+    username: 'yashwanthR',
+    password: 'Yashwanth1207!!'
 };
 
 // UI Elements
@@ -16,6 +16,51 @@ const captureBtn = document.getElementById('captureBtn');
 const resultCard = document.getElementById('resultCard');
 const loading = document.getElementById('loading');
 const placeholderText = document.getElementById('placeholderText');
+const profilePhotoInput = document.getElementById('profilePhotoInput');
+const profilePhotoPreview = document.getElementById('profilePhotoPreview');
+
+let selectedProfilePhoto = '';
+
+function setProfilePhotoElement(element, photo, altText) {
+    if (!element) return;
+
+    element.innerHTML = '';
+    if (photo) {
+        const img = document.createElement('img');
+        img.src = photo;
+        img.alt = altText;
+        element.appendChild(img);
+        return;
+    }
+
+    const icon = document.createElement('i');
+    icon.className = 'fas fa-user-circle';
+    element.appendChild(icon);
+}
+
+function resizeProfilePhoto(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const maxSize = 360;
+                const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.82));
+            };
+            img.onerror = reject;
+            img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
 
 // Chart Setup - Professional & Clean
 const ctx = document.getElementById('sensorChart').getContext('2d');
@@ -384,17 +429,35 @@ function updateProfileUI(user) {
     document.getElementById('profileNameDisplay').innerText = user.name;
     document.getElementById('profilePhoneDisplay').innerText = user.phone;
     document.getElementById('profileTypeDisplay').innerText = user.type;
+
+    const profilePhotoDisplay = document.getElementById('profilePhotoDisplay');
+    setProfilePhotoElement(profilePhotoDisplay, user.photo, `${user.name} profile photo`);
     
     // Update welcome message
     document.querySelector('header p').innerText = `Welcome back, ${user.name.split(' ')[0]}`;
 }
 
-document.getElementById('loginForm').addEventListener('submit', (e) => {
+profilePhotoInput?.addEventListener('change', async () => {
+    const file = profilePhotoInput.files?.[0];
+    if (!file) return;
+
+    try {
+        selectedProfilePhoto = await resizeProfilePhoto(file);
+        setProfilePhotoElement(profilePhotoPreview, selectedProfilePhoto, 'Selected profile photo');
+    } catch (error) {
+        console.error('Profile photo upload failed:', error);
+        selectedProfilePhoto = '';
+        setProfilePhotoElement(profilePhotoPreview, '', 'Default profile photo');
+    }
+});
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const userData = {
         name: document.getElementById('userNameInput').value,
         phone: document.getElementById('userPhoneInput').value,
-        type: document.getElementById('userTypeInput').value
+        type: document.getElementById('userTypeInput').value,
+        photo: selectedProfilePhoto
     };
     localStorage.setItem('plantCareUser', JSON.stringify(userData));
     checkAuth();
