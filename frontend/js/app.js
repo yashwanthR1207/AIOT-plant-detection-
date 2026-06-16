@@ -151,24 +151,49 @@ document.getElementById('switchCameraBtn')?.addEventListener('click', () => {
 // MQTT Setup
 const client = mqtt.connect(`wss://${MQTT_CONFIG.host}:${MQTT_CONFIG.port}${MQTT_CONFIG.path}`, {
     username: MQTT_CONFIG.username,
-    password: MQTT_CONFIG.password
+    password: MQTT_CONFIG.password,
+    clientId: 'web_client_' + Math.random().toString(16).substr(2, 8),
+    connectTimeout: 4000,
+    reconnectPeriod: 1000,
 });
 
 client.on('connect', () => {
-    document.getElementById('systemStatus').innerText = 'System Connected';
-    client.subscribe(['plant/temperature', 'plant/humidity', 'plant/soil']);
+    console.log('✅ Connected to HiveMQ Cloud via WebSockets');
+    document.getElementById('systemStatus').innerText = 'Connected';
+    document.getElementById('systemStatus').parentElement.style.color = '#10b981';
+    client.subscribe(['plant/temperature', 'plant/humidity', 'plant/soil'], (err) => {
+        if (!err) {
+            console.log('📡 Subscribed to sensor topics');
+            addActivityLog('System ready: Monitoring sensors...');
+        } else {
+            console.error('❌ Subscription error:', err);
+        }
+    });
+});
+
+client.on('error', (err) => {
+    console.error('❌ MQTT Connection Error:', err);
+    document.getElementById('systemStatus').innerText = 'Connection Error';
+    document.getElementById('systemStatus').parentElement.style.color = '#ef4444';
 });
 
 client.on('message', (topic, message) => {
-    const val = parseFloat(message.toString());
+    const rawMsg = message.toString();
+    console.log(`📩 Message received [${topic}]: ${rawMsg}`);
+    const val = parseFloat(rawMsg);
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    if (isNaN(val)) {
+        console.warn(`⚠️ Received non-numeric value on ${topic}: ${rawMsg}`);
+        return;
+    }
+
     if (topic === 'plant/temperature') {
-        document.getElementById('liveTemp').innerText = `${val}°C`;
+        document.getElementById('liveTemp').innerText = `${val.toFixed(1)}°C`;
         updateChart(0, val, time);
     }
     if (topic === 'plant/humidity') {
-        document.getElementById('liveHumidity').innerText = `${val}%`;
+        document.getElementById('liveHumidity').innerText = `${val.toFixed(1)}%`;
         updateChart(1, val, time);
     }
     if (topic === 'plant/soil') {
@@ -352,9 +377,17 @@ function displayResult(result) {
 
     addActivityLog(`DIAGNOSIS: ${result.name} (${confidencePercent}%)`);
 
-    if (!isHealthy && result.confidence >= 0.8 && client.connected) {
+    // AUTO-SPRAYER TRIGGER
+    if (!isHealthy && result.confidence >= 0.8 && client && client.connected) {
+        console.log("🚀 High confidence disease detected! Sending spray command...");
         client.publish('plant/sprayer', 'ON');
-        addActivityLog('SPRAYER: Auto trigger sent');
+        addActivityLog('SPRAYER: Auto-trigger sent to ESP32');
+        
+        // Visual feedback on the button if it existed, otherwise just log
+        const statusBadge = document.getElementById('systemStatus');
+        const originalText = statusBadge.innerText;
+        statusBadge.innerText = 'Spraying...';
+        setTimeout(() => statusBadge.innerText = originalText, 3000);
     }
 }
 

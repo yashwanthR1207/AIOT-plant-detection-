@@ -50,13 +50,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println("Message arrived [" + String(topic) + "] " + message);
 
-  if (String(topic) == "plant/spray") {
+  if (String(topic) == "plant/sprayer") {
     if (message == "ON") {
-      Serial.println("Spraying ON...");
-      sprayerServo.write(90);
-    } else if (message == "OFF") {
-      Serial.println("Spraying OFF...");
-      sprayerServo.write(0);
+      Serial.println("⚠️ Disease detected! Starting Sprayer...");
+      sprayerServo.write(90);  // Rotate to spray position
+      delay(3000);             // Spray for 3 seconds
+      sprayerServo.write(0);   // Return to idle
+      Serial.println("✅ Spraying complete.");
     }
   }
 }
@@ -64,9 +64,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("ESP32_Client", mqtt_user, mqtt_pass)) {
+    String clientId = "ESP32_Plant_" + String(random(0xffff), HEX);
+    if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass)) {
       Serial.println("connected");
-      client.subscribe("plant/spray");
+      client.subscribe("plant/sprayer"); // Ensure we are subscribed to the correct topic
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
